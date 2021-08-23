@@ -1,0 +1,26 @@
+    ["bt.j",	    "T",		    "0x0 11 TT TTTT TTTT"],
+   
+    ["bn.j",	    "Z",		    "0x4 01 10 ZZZZ ZZZZ ZZZZ ZZZZ"],
+    ["bn.bf",	    "S",		    "0x4 01 11 0010 SSSS SSSS SSSS"],
+    ["bn.bnf",	    "S",		    "0x4 01 11 0011 SSSS SSSS SSSS"],
+    ["bn.bo",	    "S",		    "0x4 01 11 0100 SSSS SSSS SSSS"],
+    ["bn.bno",	    "S",		    "0x4 01 11 0101 SSSS SSSS SSSS"],
+    ["bn.bc",	    "S",		    "0x4 01 11 0110 SSSS SSSS SSSS"],
+    ["bn.bnc",	    "S",		    "0x4 01 11 0111 SSSS SSSS SSSS"],
+    ["bn.jalr",	    "rA",		    "0x4 01 11 1101 --01 AAAA A---"],
+    ["bn.jr",	    "rA",		    "0x4 01 11 1101 --10 AAAA A---"],
+    ["bn.jal",	    "s",		    "0x4 10 ss ssss ssss ssss ssss"],
+
+    ["bw.jal",	    "z",		    "0xa 01 00 00-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz"],
+    ["bw.j",	    "z",		    "0xa 01 00 01-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz"],
+    ["bw.bf",	    "z",		    "0xa 01 00 10-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz"],
+    ["bw.bnf",	    "z",		    "0xa 01 00 11-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz"],
+    ["bw.ja",	    "g",		    "0xa 01 01 00-- ---- gggg gggg gggg gggg gggg gggg gggg gggg"],
+
+    ["bg.jal",	    "t",		    "0xd 01 00 tttt tttt tttt tttt tttt tttt"],
+    ["bg.j",	    "t",		    "0xd 01 01 tttt tttt tttt tttt tttt tttt"],
+    ["bg.bf",	    "t",		    "0xd 01 10 tttt tttt tttt tttt tttt tttt"],
+    ["bg.bnf",	    "t",		    "0xd 01 11 tttt tttt tttt tttt tttt tttt"],
+
+
+    ["bn.return",	"",		        "0x4 01 11 1101 --00 ---- ----"],

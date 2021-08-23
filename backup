@@ -1,0 +1,241 @@
+
+
+# Opcode definitions
+opcodes = [
+    "00000000xxxxx0xxxx",    # movi
+    "00000000xxxxx1xxxx",    # addi
+    "00000001xxxxxxxxxx",     # mov
+    "00000010xxxxxxxxxx",     # add
+    "00000011xxxxxxxxxx",     # j
+
+    "00001000xxxxxxxxxxxxxxxx",     # bn.sb
+    "00001001xxxxxxxxxxxxxxxx",     # bn.lbz
+    "00001010xxxxxxxx0xxxxxxx",     # bn.sh
+    "00001010xxxxxxxx1xxxxxxx",     # bn.lhz
+    "00001011xxxxxxxx00xxxxxx",     # bn.sw
+    "00001011xxxxxxxx01xxxxxx",     # bn.lwz
+    "00001011xxxxxxxx10xxxxxx",     # bn.lws
+    "00001011xxxxxxxx110xxxxx",     # bn.sd
+    "00001011xxxxxxxx111xxxxx",     # bn.ld
+
+    "00001100xxxxxxxxxxxxxxxx",     # bn.addi
+    "00001101xxxxxxxxxxxxxxxx",     # bn.andi
+    "00001110xxxxxxxxxxxxxxxx",     # bn.ori
+
+    "0000111100000xxxxxxxxxxx",     # bn.sfeqi
+    "0000111100001xxxxxxxxxxx",     # bn.sfnei
+    "0000111100010xxxxxxxxxxx",     # bn.sfgesi
+    "0000111100011xxxxxxxxxxx",     # bn.sfgeui
+    "0000111100100xxxxxxxxxxx",     # bn.sfgtsi
+    "0000111100101xxxxxxxxxxx",     # bn.sfgtui
+    "0000111100110xxxxxxxxxxx",     # bn.sflesi
+    "0000111100111xxxxxxxxxxx",     # bn.sfleui
+    "0000111101000xxxxxxxxxxx",     # bn.sfltsi
+    "0000111101001xxxxxxxxxxx",     # bn.sfltui
+
+    "0000111101010xxxxxxxxxxx",     # bn.sfeq
+    "0000111101011xxxxxxxxxxx",     # bn.sfne
+    "0000111101100xxxxxxxxxxx",     # bn.sfges
+    "0000111101101xxxxxxxxxxx",     # bn.sfgeu
+    "0000111101110xxxxxxxxxxx",     # bn.sfgts
+    "0000111101111xxxxxxxxxxx",     # bn.sfgtu
+
+    "0000111110x00xxxxxxxx000",     # bn.extbz
+    "0000111110x00xxxxxxxx001",     # bn.extbs
+    "0000111110x00xxxxxxxx010",     # bn.exthz
+    "0000111110x00xxxxxxxx011",     # bn.exths
+    "0000111110x00xxxxxxxx100",     # bn.ff1
+    "0000111110x00xxxxxxxx101",     # bn.clz
+    "0000111110x00xxxxxxxx110",     # bn.bitrev
+    "0000111110x00xxxxxxxx111",     # bn.swab
+
+    "0000111110x01xxxxxxxx000",     # bn.mfspr
+    "0000111110x01xxxxxxxx001",     # bn.mtspr
+
+    "0000111110x10xxxxxxxx000",     # bn.abs
+    "0000111110x10xxxxxxxx001",     # bn.sqr
+    "0000111110x10xxxxxxxx010",     # bn.sqra
+
+    "0000111111x00xxxxxxxx010",     # bn.casei
+]
+
+def check_hex(c):
+    if (c >= "0" and c <= "9") or (c >= "a" and c <= "f"):
+        return True
+
+def extract_immediate_old(instruction, mask):
+    immediate_str = ""
+    immediate = 0
+
+    print("Extract immediate")
+    print(instruction)
+    print(mask)
+
+    for i in range(0, len(instruction)):
+        nibble_1_check = False
+        nibble_2_check = False
+        
+        if mask[i*2] != "0":
+            nibble_1_check = True
+
+        if mask[i*2+1] != "0":
+            nibble_2_check = True
+
+        if nibble_1_check and nibble_2_check:
+            immediate_str += hex(instruction[i])[2:]
+            continue
+
+        if nibble_1_check:
+            immediate_str += hex((instruction[i] & 0xF0) >> 4)[2:]
+            continue
+
+        if nibble_2_check:
+            immediate_str += hex(instruction[i] & 0x0F)[2:]
+            continue
+
+    print("immediate_str: " + immediate_str)
+    immediate = int(immediate_str)
+
+    return immediate
+
+def extract_register_old(instruction, mask):
+    register_number = extract_immediate(instruction, mask)
+
+    return Register("r" + str(register_number))
+
+# Disassemble instructions.
+# Return an instruction text 
+def disassemble_old(data, addr):
+    instruction = None
+
+    if len(data) < 1:
+        return None, None, None, None
+
+    if check_opcode(data, opcodes[0]):
+        instruction = Instruction("bt.movi", [RegisterOperand(Register.r0), ImmediateOperand(0)])
+        parse_instruction(data, 0)
+
+    elif check_opcode(data, opcodes[1]):
+        instruction = Instruction("bt.addi", [RegisterOperand(Register.r0), ImmediateOperand(0)])
+
+    elif check_opcode(data, opcodes[2]):
+        instruction = Instruction("bt.mov", [RegisterOperand(Register.r0), RegisterOperand(Register.r0)])
+
+    elif check_opcode(data, opcodes[3]):
+        instruction = Instruction("bt.add", [RegisterOperand(Register.r0), RegisterOperand(Register.r0)])
+
+    elif check_opcode(data, opcodes[4]):
+        instruction = Instruction("bt.j", [AddressOperand(0)])
+        
+    print(instruction)
+
+    return None, None, None, None
+
+# Parse the instructino definition at the offset and parse the instruction accordingly
+def parse_instruction(instruction, opcodeIdx):
+    beyond_opcode = beyond_opcodes[opcodeIdx]
+
+    instruction_length = len(opcodes[opcodeIdx])
+
+    operand_definition = beyond_opcode[1]
+    instruction_definition = beyond_opcode[2]
+    instruction_definition = "0" + instruction_definition[2:].strip().replace(' ', '') # remove the "0x" at the beginning
+
+    print("Instruction definition: " + str(instruction_definition))
+
+    # Parse the operands definition
+    operands = operand_definition.split(",")
+
+    print(operands)
+
+    instructionOperands = []
+
+    # Use AddressOperand for branch instructions
+    # TODO
+
+    # All other instructions use ImmediateOperand
+    for operand in operands:
+        # Parse the provided operand
+        parsed_operand = parse_operand(operand, instruction_definition)
+
+        if  parsed_operand[0] == OperandType.Immediate:
+            immediate_mask = parsed_operand[1][0]
+
+            # Get the immediate from the mask
+            immediate = extract_immediate(instruction, immediate_mask)
+
+            print("Extracted immediate: " + str(immediate))
+
+            instructionOperands.append(ImmediateOperand(immediate))
+
+        elif  parsed_operand[0] == OperandType.Register:
+            register_mask = parsed_operand[1][0]
+
+            # Get the register from the mask
+            register = extract_immediate(instruction, register_mask)
+
+            print("Extracted register: " + str(register))
+
+            instructionOperands.append(RegisterOperand(Register.r0))
+
+        elif  parsed_operand[0] == OperandType.Memory:
+            immediate_mask = parsed_operand[1][0]
+            register_mask = parsed_operand[1][1]
+
+            # Get the immediate from the mask
+            immediate = extract_immediate(instruction, immediate_mask)
+
+            # Get the register from the mask
+            register = extract_immediate(instruction, register_mask)
+
+            instructionOperands.append(MemoryOperand([ImmediateOperand(immediate), Register.r0]))
+
+    print("Parsed instruction operands: ")
+    for op in instructionOperands:
+        print(str(op))
+
+    return Instruction(operand_definition, instructionOperands)
+
+# Function which compares bytes to opcode array entry
+def check_opcode(instruction_bytes, opcode):
+    check = True
+
+    if len(instruction_bytes) * 2 != len(opcode):
+        print("lengths do not match: " + str(len(instruction_bytes)) + " & " + str(len(opcode)))
+        return False
+
+    for i in range(0, len(instruction_bytes)):
+        nibble_1_check = False
+        nibble_2_check = False
+
+        # skip, if these bytes to not determine the opcode
+        if opcode[i*2] == "x" and opcode[i*2+1] == "x":
+            print("skipping: " + opcode[i*2] + " & " + opcode[i*2+1])
+            continue
+
+        # check the first nibble
+        if opcode[i*2] != "x":
+            if instruction_bytes[i:i+1].hex()[0] == opcode[i*2]:
+                nibble_1_check = True
+                print("1st nibble check success: " + instruction_bytes[i:i+1].hex()[0] + " & " + opcode[i*2])
+            else:
+                print("1st nibble check failed: " + instruction_bytes[i:i+1].hex()[0] + " & " + opcode[i*2])
+        else:
+            nibble_1_check = True
+
+        # check the second nibble
+        if opcode[i*2+1] != "x":
+            if instruction_bytes[i:i+1].hex()[1] == opcode[i*2+1]:
+                nibble_2_check = True
+                print("2nd nibble check success: " + instruction_bytes[i:i+1].hex()[1] + " & " + opcode[i*2+1])
+            else:
+                print("2nd nibble check failed: " + instruction_bytes[i:i+1].hex()[1] + " & " + opcode[i*2+1])
+        else:
+            nibble_2_check = True
+
+        if nibble_1_check is False or nibble_2_check is False:
+            return False
+
+        check = check and nibble_1_check and nibble_2_check
+
+    return check

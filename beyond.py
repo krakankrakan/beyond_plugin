@@ -29,7 +29,23 @@ class Beyond2(Architecture):
         "r12" : RegisterInfo("r12", address_size),
         "r13" : RegisterInfo("r13", address_size),
         "r14" : RegisterInfo("r14", address_size),
-        "r15" : RegisterInfo("r15", address_size)
+        "r15" : RegisterInfo("r15", address_size),
+        "r16" : RegisterInfo("r16", address_size),
+        "r17" : RegisterInfo("r17", address_size),
+        "r18" : RegisterInfo("r18", address_size),
+        "r19" : RegisterInfo("r19", address_size),
+        "r20" : RegisterInfo("r20", address_size),
+        "r21" : RegisterInfo("r21", address_size),
+        "r22" : RegisterInfo("r22", address_size),
+        "r23" : RegisterInfo("r23", address_size),
+        "r24" : RegisterInfo("r24", address_size),
+        "r25" : RegisterInfo("r25", address_size),
+        "r26" : RegisterInfo("r26", address_size),
+        "r27" : RegisterInfo("r27", address_size),
+        "r28" : RegisterInfo("r28", address_size),
+        "r29" : RegisterInfo("r29", address_size),
+        "r30" : RegisterInfo("r30", address_size),
+        "r31" : RegisterInfo("r31", address_size),
     }
 
     stack_pointer = "r1"

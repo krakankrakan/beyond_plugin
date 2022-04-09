@@ -4,6 +4,7 @@ from binaryninja import BinaryView, BinaryViewType
 from binaryninja.enums import SegmentFlag, SectionSemantics, SymbolType, Endianness
 from binaryninja.types import Type, Symbol
 
+import beyond.calling_convention as calling_convention
 
 FLASH_MAP_START = 0x80000
 ENTRYPOINT_ADDR = FLASH_MAP_START + 0x38
@@ -103,4 +104,11 @@ class JN51xxFlashView(BinaryView):
 
 def register_view():
     JN51xxFlashView.register()
-    BinaryViewType['ELF'].register_arch(0x8472, Endianness.BigEndian, binaryninja.architecture.Architecture["beyond2"])
+
+    a = binaryninja.architecture.Architecture["beyond2"]
+
+    BinaryViewType['ELF'].register_arch(0x8472, Endianness.BigEndian, a)
+
+    # Set calling convention
+    a.register_calling_convention(calling_convention.BeyondCallingConvention(a, "default"))
+    a.standalone_platform.default_calling_convention = a.calling_conventions["default"]

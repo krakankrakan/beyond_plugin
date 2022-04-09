@@ -5,6 +5,9 @@ from enum import Enum
 
 import beyond.utils as utils
 
+# We need a lookup cache because of my inefficient coding :(
+disasm_cache = {}
+
 # Opcodes are 4 bit long
 OPCODE_LENGTH = 4
 
@@ -242,7 +245,7 @@ beyond_opcodes = [
     ["bn.entri",	"F,N",		    "0x4 01 11 1010 FFFF NNNN NNNN", [InstInfo.NONE]],
     ["bn.reti",	    "F,N",		    "0x4 01 11 1011 FFFF NNNN NNNN", [InstInfo.NONE]],
     ["bn.rtnei",	"F,N",		    "0x4 01 11 1100 FFFF NNNN NNNN", [InstInfo.NONE]],
-    ["bn.return",	"",		        "0x4 01 11 1101 --00 ---- ----", [InstInfo.NONE]],
+    ["bn.return",	"",		        "0x4 01 11 1101 --00 ---- ----", [InstInfo.RETURN]],
     ["bn.jalr",	    "rA",		    "0x4 01 11 1101 --01 AAAA A---", [InstInfo.LSB, InstInfo.BRANCH]],
     ["bn.jr",	    "rA",		    "0x4 01 11 1101 --10 AAAA A---", [InstInfo.LSB, InstInfo.BRANCH]],
     ["bn.jal",	    "s",		    "0x4 10 ss ssss ssss ssss ssss", [InstInfo.LSB, InstInfo.BRANCH]],
@@ -544,6 +547,10 @@ def parse_operand(operand, instruction_definition):
 def disassemble(data, addr):
     #print("Data: " + str(data))
 
+    cached_instruction, cached_instruction_len, cached_instruction_data = lookup_disasm_cache(addr, data)
+    if cached_instruction is not None and cached_instruction_len is not None and cached_instruction_data is not None:
+        return cached_instruction, cached_instruction_len, cached_instruction_data
+
     instruction      = None
     instruction_len  = 0
     instruction_data = None
@@ -655,8 +662,6 @@ def disassemble(data, addr):
     if instruction == None:
         return None, 0, instruction_data
 
-    #print(instruction)
-
     if InstInfo.BRANCH in instr_dec_flags:
         if len(instruction.operands) > 0:
             if type(instruction.operands[0]) is ImmediateOperand:
@@ -680,68 +685,25 @@ def disassemble(data, addr):
         if len(instruction.operands) > 0:
             instruction_data = [BranchType.TrueBranch, instruction.operands[-1].immediate, BranchType.FalseBranch, addr + instruction_len]
 
-#    if instruction.opcode == "bt.j":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.j":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.bf":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.bnf":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.bo":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#    
-#    if instruction.opcode == "bn.bno":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.bc":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.bnc":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.jalr":
-#        instruction_data = [BranchType.IndirectBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.jr":
-#        instruction_data = [BranchType.IndirectBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bn.jal":
-#        instruction_data = [BranchType.CallDestination, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bw.jal":
-#        instruction_data = [BranchType.CallDestination, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bw.j":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bw.bf":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bw.bnf":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    #if instruction.opcode == "bw.ja":
-#    #    instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bg.jal":
-#        instruction_data = [BranchType.CallDestination, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bg.j":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bg.bf":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bg.bnf":
-#        instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate + addr]
-#
-#    if instruction.opcode == "bg.return":
-#        instruction_data = [BranchType.FunctionReturn, 0]
+    # There are multiple instructions which can look like a return.
+    # These are:
+    #   bn.return
+    #   bn.jr r9
+    # TODO: add more
+
+    is_return = False
+    if opcode == "bn.jr":
+        if instruction.operand[0].register == Register.r9:
+            is_return = True
+
+    if InstInfo.RETURN in instr_dec_flags:
+        is_return = True
+
+    if is_return:
+        instruction_data = [BranchType.FunctionReturn]
+
+    # Update the disassembly cache
+    update_disasm_cache(addr, data, instruction, instruction_len, instruction_data)
 
     return instruction, instruction_len, instruction_data
 
@@ -786,3 +748,17 @@ def init_disassembler():
             # Parse the provided operand
             parsed_operand = parse_operand(operand, instruction_definition)
             beyond_opcodes[i].append(parsed_operand)
+
+def lookup_disasm_cache(addr, data):
+    global disasm_cache
+
+    if addr in disasm_cache:
+        if data == disasm_cache[addr][0]:
+            return disasm_cache[addr][1], disasm_cache[addr][2], disasm_cache[addr][3]
+    
+    return None, None, None
+
+def update_disasm_cache(addr, data, instruction, instruction_len, instruction_data):
+    global disasm_cache
+
+    disasm_cache[addr] = (data, instruction, instruction_len, instruction_data)

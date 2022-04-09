@@ -1,7 +1,7 @@
 from binaryninja import Architecture
 from binaryninja import BinaryView
 from binaryninja.enums import SegmentFlag, SectionSemantics, SymbolType
-from binaryninja.types import Structure, Type, Symbol
+from binaryninja.types import Type, Symbol
 
 
 FLASH_MAP_START = 0x80000
@@ -10,6 +10,7 @@ ENTRYPOINT_ADDR = FLASH_MAP_START + 0x38
 class Beyond2View(BinaryView):
     name = "Beyond 2 Image Loader"
     long_name = "Beyond 2 Image Loader"
+    entry = 0
 
     def __init__(self, data):
         BinaryView.__init__(self, parent_view = data, file_metadata = data.file)
@@ -26,14 +27,14 @@ class Beyond2View(BinaryView):
         bss_section_start = 0
         bss_section_length = 0
 
-        data_section_flash_start = int.from_bytes(data[0x24:0x28], "little")
-        data_section_load_start  = int.from_bytes(data[0x28:0x2A], "little")
-        data_section_length      = int.from_bytes(data[0x2A:0x2C], "little")
-        bss_section_start        = int.from_bytes(data[0x2C:0x2E], "little")
-        bss_section_length       = int.from_bytes(data[0x2E:0x30], "little")
+        data_section_flash_start = int.from_bytes(data[0x24:0x28], "big")
+        data_section_load_start  = int.from_bytes(data[0x28:0x2A], "big")
+        data_section_length      = int.from_bytes(data[0x2A:0x2C], "big")
+        bss_section_start        = int.from_bytes(data[0x2C:0x2E], "big")
+        bss_section_length       = int.from_bytes(data[0x2E:0x30], "big")
 
         # Add the segments and sections
-        self.add_auto_segment(FLASH_MAP_START, len(data), 0, len(data), SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable | SegmentFlag.SegmentExecutable | SegmentFlag.SegmentContainsCode)
+        self.add_auto_segment(FLASH_MAP_START + 0x38 + 4, len(data) - 0x38 - 4, 0x38 + 4, len(data) - 0x38 - 4, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable | SegmentFlag.SegmentExecutable | SegmentFlag.SegmentContainsCode)
         
         self.add_auto_segment(0, FLASH_MAP_START, 0, 0, SegmentFlag.SegmentReadable)
         self.add_auto_segment(0x000C0000, FLASH_MAP_START, 0, 0, SegmentFlag.SegmentReadable)
@@ -44,8 +45,9 @@ class Beyond2View(BinaryView):
         #self.add_user_section('ROM BSS', bss_section_start, bss_section_length, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
 
         # Parse and mark entrypoints
-        wakeup_entry = int.from_bytes(data[0x30:0x34], "little")
-        reset_entry  = int.from_bytes(data[0x34:0x38], "little")
+        wakeup_entry = int.from_bytes(data[0x30:0x34], "big")
+        reset_entry  = int.from_bytes(data[0x34:0x38], "big")
+        self.entry = reset_entry
 
         try:
             self.add_function(wakeup_entry)
@@ -53,8 +55,8 @@ class Beyond2View(BinaryView):
             self.add_function(reset_entry)
             self.get_function_at(reset_entry).name  = 'reset_entry'
 
-            self.add_entry_point(ENTRYPOINT_ADDR)
-            self.get_function_at(ENTRYPOINT_ADDR).name = 'entry'
+            #self.add_entry_point(ENTRYPOINT_ADDR)
+            #self.get_function_at(ENTRYPOINT_ADDR).name = 'entry'
 
             # Create a custom structure type for the header
             header_struct_type = Structure()
@@ -82,11 +84,9 @@ class Beyond2View(BinaryView):
 
     @classmethod
     def is_valid_for_data(cls, data):
-        return True
-
         magic = b"\x12\x34\x56\x78\x11\x22\x33\x44\x55\x66\x77\x88"
 
-        if len(data) < len(magic):
+        if len(data) < len(magic) + 4:
             return False
 
         if data[:len(magic)] == magic:
@@ -98,7 +98,7 @@ class Beyond2View(BinaryView):
         return True
 
     def perform_get_entry_point(self):
-        return ENTRYPOINT_ADDR
+        return self.entry
 
 def register_view():
     Beyond2View.register()

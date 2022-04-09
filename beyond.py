@@ -47,6 +47,9 @@ class Beyond2(Architecture):
         result.length = instruction_len
 
         if instruction_data is not None:
+            if len(instruction_data) == 1:
+                print("Adding indirect branch")
+                result.add_branch(instruction_data[0])
             if len(instruction_data) == 2:
                 print("Adding branch to: " + hex(instruction_data[1]))
                 result.add_branch(instruction_data[0], instruction_data[1])

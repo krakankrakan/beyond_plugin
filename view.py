@@ -1,13 +1,14 @@
+from binaryninja import *
 from binaryninja import Architecture
-from binaryninja import BinaryView
-from binaryninja.enums import SegmentFlag, SectionSemantics, SymbolType
+from binaryninja import BinaryView, BinaryViewType
+from binaryninja.enums import SegmentFlag, SectionSemantics, SymbolType, Endianness
 from binaryninja.types import Type, Symbol
 
 
 FLASH_MAP_START = 0x80000
 ENTRYPOINT_ADDR = FLASH_MAP_START + 0x38
 
-class Beyond2View(BinaryView):
+class JN51xxFlashView(BinaryView):
     name = "Beyond 2 Image Loader"
     long_name = "Beyond 2 Image Loader"
     entry = 0
@@ -101,4 +102,5 @@ class Beyond2View(BinaryView):
         return self.entry
 
 def register_view():
-    Beyond2View.register()
+    JN51xxFlashView.register()
+    BinaryViewType['ELF'].register_arch(0x8472, Endianness.BigEndian, binaryninja.architecture.Architecture["beyond2"])

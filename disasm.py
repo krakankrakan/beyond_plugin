@@ -123,9 +123,15 @@ class MemoryOperand(Operand):
 
     def visit(self):
         result = []
-        result.append(InstructionTextToken(InstructionTextTokenType.BeginMemoryOperandToken, "("))
-        result.extend(self.operands.visit())
-        result.append(InstructionTextToken(InstructionTextTokenType.EndMemoryOperandToken, ")"))
+        result.append(InstructionTextToken(InstructionTextTokenType.BeginMemoryOperandToken, "["))
+        #result.extend(self.operands.visit())
+
+        for operand in self.operands:
+            result.append(operand.visit()[0])
+            if operand is not self.operands[-1]:
+                result.append(InstructionTextToken(InstructionTextTokenType.TextToken, "+"))
+
+        result.append(InstructionTextToken(InstructionTextTokenType.EndMemoryOperandToken, "]"))
         return result
 
 class Instruction():
@@ -606,8 +612,12 @@ def disassemble(data, addr):
                     if InstInfo.BRANCH in instr_dec_flags or InstInfo.CALL in instr_dec_flags:
                         immediate = immediate + addr
 
+                    # Only the last immediate deternines the jump target address
+                    if opcodes[-1] is opcode and InstInfo.CONDITIONAL_BRANCH in instr_dec_flags:
+                        immediate = immediate + addr
+
                     instructionOperands.append(ImmediateOperand(immediate))
-                break
+                #break
                 if opcode[0] == OperandType.Register:
                     register_mask = opcode[1][0]     
 
@@ -649,7 +659,10 @@ def disassemble(data, addr):
 
     if InstInfo.BRANCH in instr_dec_flags:
         if len(instruction.operands) > 0:
-            instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate]
+            if type(instruction.operands[0]) is ImmediateOperand:
+                instruction_data = [BranchType.UnconditionalBranch, instruction.operands[0].immediate]
+            elif type(instruction.operands[0]) is RegisterOperand:
+                instruction_data = [BranchType.UnresolvedBranch]
 
     if InstInfo.CALL in instr_dec_flags:
         if len(instruction.operands) > 0:
@@ -657,7 +670,7 @@ def disassemble(data, addr):
 
     if InstInfo.INDIRECT in instr_dec_flags:
         if len(instruction.operands) > 0:
-            instruction_data = [BranchType.IndirectBranch, instruction.operands[0].immediate]
+            instruction_data = [BranchType.IndirectBranch]
     
     if InstInfo.RETURN in instr_dec_flags:
         if len(instruction.operands) > 0:

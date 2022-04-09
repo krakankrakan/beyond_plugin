@@ -106,7 +106,15 @@ class Beyond2(Architecture):
         return tokens, instruction_len
 
     def get_instruction_low_level_il(self, data, addr, il):
-        return None
+        #return None
+        expr, instruction_len = disasm.instruction_to_llil(data, addr, il)
+
+        if expr is not None:
+            il.append(expr)
+        else:
+            instruction_len = 0
+
+        return instruction_len
 
 def register_arch():
     Beyond2.register()

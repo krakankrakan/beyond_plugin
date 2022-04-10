@@ -74,6 +74,7 @@ def lift_bn_xor(il, inst):
         lambda src : il.xor_expr(4, op_as_il(il, src[0]), op_as_il(il, src[1]))
         [inst.operand[0].register, inst.operand[1].register, inst.operand[2].register])
 
+
 #
 # Conditional Expressions
 #
@@ -174,6 +175,7 @@ def lift_bn_sflts(il, inst):
 def lift_bn_sfltu(il, inst):
     return lift_bn_sfgesi(il, inst)
 
+
 #
 # Control Flow Expressions
 #
@@ -182,4 +184,74 @@ def lift_bn_sfltu(il, inst):
 #
 # Memory Load/Store Expressions
 #
+
+def store(il, size, src_dst):
+    return il.store(
+        size,
+        src_dst[0],
+        op_as_il(il, src_dst[1])
+    )
+
+def load(il, size, src_dst, sign_extend):
+    if sign_extend:
+        return il.set_reg(
+                4,
+                il.sign_extend(
+                    4,
+                    il.load(
+                        size,
+                        mem_operand(src_dst[1])
+                    )
+                ),
+                op_as_il(il, src_dst[0])
+            )
+    else:
+        return il.set_reg(
+                4,
+                il.zero_extend(
+                    4,
+                    il.load(
+                        size,
+                        mem_operand(src_dst[1])
+                    )
+                ),
+                op_as_il(il, src_dst[0])
+            )
+
+def mem_operand(il, mem_op):
+    return il.add(
+        4,
+        op_as_il(il, mem_op.operands[0].immediate),
+        op_as_il(il, mem_op.operands[0].register)
+    )
+
+# Store instructions
+
+def lift_bn_sb(il, inst):
+    return store(il, 1, [mem_operand(il, inst.operand[0]), inst.operand[1].register])
+
+def lift_bn_sh(il, inst):
+    return store(il, 2, [mem_operand(il, inst.operand[0]), inst.operand[1].register])
+
+def lift_bn_sw(il, inst):
+    return store(il, 4, [mem_operand(il, inst.operand[0]), inst.operand[1].register])
+
+def lift_bn_sd(il, inst):
+    return store(il, 8, [mem_operand(il, inst.operand[0]), inst.operand[1].register])
+
+# Load instructions
+def lift_bn_lbz(il, inst):
+    return load(il, 1, inst.operands, False)
+
+def lift_bn_lhz(il, inst):
+    return load(il, 2, inst.operands, False)
+
+def lift_bn_lwz(il, inst):
+    return load(il, 4, inst.operands, False)
+
+def lift_bn_lws(il, inst):
+    return load(il, 4, inst.operands, False)
+
+def lift_bn_ld(il, inst):
+    return load(il, 8, inst.operands, False)
 

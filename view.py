@@ -6,6 +6,10 @@ from binaryninja.types import Type, Symbol
 
 import beyond.calling_convention as calling_convention
 
+SHADOW_RAM_START = 0xF000000
+RAM_START = 0x4000000
+PERIPHERALS_START = 0x2000000
+EEPROM_REGS_START = 0x1000000
 FLASH_MAP_START = 0x80000
 ENTRYPOINT_ADDR = FLASH_MAP_START + 0x38
 
@@ -36,11 +40,20 @@ class JN51xxFlashView(BinaryView):
         bss_section_length       = int.from_bytes(data[0x2E:0x30], "big")
 
         # Add the segments and sections
-        self.add_auto_segment(FLASH_MAP_START + 0x38 + 4, len(data) - 0x38 - 4, 0x38 + 4, len(data) - 0x38 - 4, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable | SegmentFlag.SegmentExecutable | SegmentFlag.SegmentContainsCode)
+        self.add_auto_segment(FLASH_MAP_START + 0x38 + 4, len(data) - 0x38 - 4, 0x38 + 4, len(data) - 0x38 - 4, SegmentFlag.SegmentExecutable | SegmentFlag.SegmentContainsCode)
         
-        self.add_auto_segment(0, FLASH_MAP_START, 0, 0, SegmentFlag.SegmentReadable)
-        self.add_auto_segment(0x000C0000, FLASH_MAP_START, 0, 0, SegmentFlag.SegmentReadable)
-        
+        self.add_auto_segment(0, FLASH_MAP_START, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable | SegmentFlag.SegmentExecutable)
+
+        self.add_auto_segment(EEPROM_REGS_START, 0x1000000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
+        self.add_auto_segment(PERIPHERALS_START, 0x3000000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
+        self.add_auto_segment(RAM_START, 0x8000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
+        self.add_auto_segment(SHADOW_RAM_START, 0x8000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
+
+        self.add_user_section('Applicatin Code', FLASH_MAP_START + 0x38 + 4, 0xC0000 - 0x38 - 4, SectionSemantics.ReadOnlyCodeSectionSemantics)
+        self.add_user_section('EEPROM', EEPROM_REGS_START, 0x1000000, SectionSemantics.ReadWriteDataSectionSemantics)
+        self.add_user_section('Peripherals', PERIPHERALS_START, 0x3000000, SectionSemantics.ReadWriteDataSectionSemantics)
+        self.add_user_section('RAM', RAM_START, 0x8000, SectionSemantics.ReadWriteDataSectionSemantics)
+        self.add_user_section('Shadow RAM', SHADOW_RAM_START, 0x8000, SectionSemantics.ReadWriteDataSectionSemantics)
 
         #self.add_user_section('ROM Text', FLASH_MAP_START, len(data), SectionSemantics.ReadOnlyCodeSectionSemantics)
         #self.add_user_section('ROM Data', data_section_load_start, data_section_length, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)

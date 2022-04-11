@@ -37,7 +37,7 @@ def lift_bt_movi(il, inst):
 def lift_bt_addi(il, inst):
     return arith(il, inst,
         lambda src : il.add(4, op_as_il(il, src[0]), op_as_il(il, src[1])),
-        [inst.operands[0].register, inst.operands[1].immediate])
+        [inst.operands[0].register, inst.operands[0].register, inst.operands[1].immediate])
 
 def lift_bn_addi(il, inst):
     return arith(il, inst,
@@ -52,7 +52,7 @@ def lift_bt_mov(il, inst):
 def lift_bt_add(il, inst):
     return arith(il, inst,
         lambda src : il.add(4, op_as_il(il, src[0]), op_as_il(il, src[1])),
-        [inst.operands[0].register, inst.operands[1].register])
+        [inst.operands[0].register, inst.operands[0].register, inst.operands[1].register])
 
 def lift_bn_andi(il, inst):
     return arith(il, inst,
@@ -235,16 +235,6 @@ def lift_bn_bnc(il, inst):
     cond_jump(il, inst, il.not_expr(4, il.flag("C")))
     return None
 
-def lift_bn_j(il, inst):
-    j_label = il.get_label_for_address(Architecture["beyond2"], op_as_il(il, inst.operands[0].immediate))
-    
-    if j_label is not None:
-        expr = il.goto(j_label)
-    else:
-        expr = il.jump(op_as_il(il, inst.operands[0].immediate))
-    
-    return expr
-
 # Comparison-based instruction
 
 def lift_bn_beqi(il, inst):
@@ -336,6 +326,38 @@ def lift_bw_bgts(il, inst):
             op_as_il(il, inst.operands[1].register)
         )
     )
+
+# Unconditional jumps
+
+def lift_return(il, inst):
+    return il.ret(il.pop(4))
+
+def lift_bn_j(il, inst):
+    expr = None
+    j_label = il.get_label_for_address(Architecture["beyond2"], op_as_il(il, inst.operands[0].immediate))
+    
+    if j_label is not None:
+        expr = il.goto(j_label)
+    else:
+        expr = il.jump(op_as_il(il, inst.operands[0].immediate))
+
+    return expr
+    
+def lift_bn_jr(il, inst):
+    expr = None
+
+    if disasm.is_return_inst(inst):
+        expr = lift_return(il, inst)
+    else:
+        expr = il.jump(op_as_il(il, inst.operands[0].register))
+
+    return expr
+
+def lift_bl_jal(il, inst):
+    return il.call(op_as_il(il, inst.operands[0].immediate))
+
+def lift_bl_jalr(il, inst):
+    return il.call(op_as_il(il, inst.operands[0].register))
 
 #
 # Memory Load/Store Expressions

@@ -13,7 +13,7 @@ def op_as_il(il, op):
         else:
             return il.reg(4, op)
     else:
-        print(type(op))
+        #print(type(op))
         return il.const(4, op)
 
 #
@@ -86,7 +86,7 @@ def lift_bn_xor(il, inst):
 
 def lift_bn_nand(il, inst):
     return arith(il, inst,
-        lambda src : il.not_expr(il.and_expr(4, op_as_il(il, src[0]), op_as_il(il, src[1]))),
+        lambda src : il.not_expr(4, il.and_expr(4, op_as_il(il, src[0]), op_as_il(il, src[1]))),
         [inst.operands[0].register, inst.operands[1].register, inst.operands[2].register])
 
 def lift_bn_extbz(il, inst):
@@ -263,7 +263,9 @@ def lift_bn_sfges(il, inst):
         [inst.operands[0].register, inst.operands[1].register])
 
 def lift_bn_sfgeu(il, inst):
-    return lift_bn_sfgesi(il, inst)
+    return cond(il, inst,
+        lambda src : il.compare_unsigned_greater_equal(4, op_as_il(il, src[0]), op_as_il(il, src[1])),
+        [inst.operands[0].register, inst.operands[1].register])
 
 def lift_bn_sfgts(il, inst):
     return cond(il, inst,
@@ -271,7 +273,9 @@ def lift_bn_sfgts(il, inst):
         [inst.operands[0].register, inst.operands[1].register])
 
 def lift_bn_sfgtu(il, inst):
-    return lift_bn_sfgesi(il, inst)
+    return cond(il, inst,
+        lambda src : il.compare_unsigned_greater_than(4, op_as_il(il, src[0]), op_as_il(il, src[1])),
+        [inst.operands[0].register, inst.operands[1].register])
 
 # TODO: Don't need this function
 def lift_bn_sfles(il, inst):

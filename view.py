@@ -42,15 +42,18 @@ class JN51xxFlashView(BinaryView):
         # Add the segments and sections
         self.add_auto_segment(FLASH_MAP_START + 0x38 + 4, len(data) - 0x38 - 4, 0x38 + 4, len(data) - 0x38 - 4, SegmentFlag.SegmentExecutable | SegmentFlag.SegmentContainsCode)
         
-        self.add_auto_segment(0, FLASH_MAP_START, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable | SegmentFlag.SegmentExecutable)
-
+        #print(hex(data_section_flash_start))
+        #print(hex(data_section_length * 4))
+        #self.add_auto_segment(EEPROM_REGS_START, FLASH_MAP_START, data_section_flash_start - FLASH_MAP_START, data_section_length * 4, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
+        
         self.add_auto_segment(EEPROM_REGS_START, 0x1000000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
+
         self.add_auto_segment(PERIPHERALS_START, 0x3000000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
         self.add_auto_segment(RAM_START, 0x8000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
         self.add_auto_segment(SHADOW_RAM_START, 0x8000, 0, 0, SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable)
 
-        self.add_user_section('Applicatin Code', FLASH_MAP_START + 0x38 + 4, 0xC0000 - 0x38 - 4, SectionSemantics.ReadOnlyCodeSectionSemantics)
-        self.add_user_section('EEPROM', EEPROM_REGS_START, 0x1000000, SectionSemantics.ReadWriteDataSectionSemantics)
+        self.add_user_section('Application Code', FLASH_MAP_START + 0x38 + 4, 0xC0000 - 0x38 - 4, SectionSemantics.ReadOnlyCodeSectionSemantics)
+        self.add_user_section('Flash/EEPROM', EEPROM_REGS_START, 0x1000000, SectionSemantics.ReadWriteDataSectionSemantics)
         self.add_user_section('Peripherals', PERIPHERALS_START, 0x3000000, SectionSemantics.ReadWriteDataSectionSemantics)
         self.add_user_section('RAM', RAM_START, 0x8000, SectionSemantics.ReadWriteDataSectionSemantics)
         self.add_user_section('Shadow RAM', SHADOW_RAM_START, 0x8000, SectionSemantics.ReadWriteDataSectionSemantics)

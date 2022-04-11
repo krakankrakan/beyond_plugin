@@ -177,9 +177,6 @@ class Instruction():
         result.append(InstructionTextToken(InstructionTextTokenType.TextToken, self.opcode))
         result.extend(self.visit_operands())
 
-        #print("get_instruction_text:")
-        #print(result)
-
         return result
 
     # recursive determine instruction tokens from operands list
@@ -461,11 +458,6 @@ def extract_immediate(instruction, mask, lsb_first, unsigned):
     shift         = utils.get_first_one_pos(mask)
     immediate = 0
 
-    #print("Extract immediate")
-    #print(instruction)
-    #print(mask)
-    #print(shift)
-
     immediate = (instruction & mask) >> shift
     immediate_size = utils.get_last_one_pos(mask) - shift + 1
 
@@ -546,13 +538,11 @@ def parse_operand(operand, instruction_definition):
     # Immediate
     if len(operand) == 1:
         immediate_mask = parse_immediate(operand, instruction_definition)
-        #print("Immediate mask: " + bin(immediate_mask))
         return (OperandType.Immediate, [immediate_mask])
 
     # Check for register
     if operand[0] == "r":
         register_mask = parse_register(operand, instruction_definition)
-        #print("Register mask: " + bin(register_mask))
         return (OperandType.Register, [register_mask])
 
     # Memory access
@@ -567,7 +557,6 @@ def parse_operand(operand, instruction_definition):
 # Disassemble instructions.
 # Return an instruction text 
 def disassemble(data, addr):
-    #print("Data: " + str(data))
 
     cached_instruction, cached_instruction_len, cached_instruction_data = lookup_disasm_cache(addr, data[:MAX_INST_LEN])
     if cached_instruction is not None and cached_instruction_len is not None:
@@ -592,7 +581,7 @@ def disassemble(data, addr):
         data_tmp = data[:tested_instruction_len]
         data_int = int.from_bytes(data_tmp, byteorder="big")
 
-        print("addr: " + hex(addr) + " data_int: " + hex(data_int) + " bin: " + bin(data_int))
+        #print("addr: " + hex(addr) + " data_int: " + hex(data_int) + " bin: " + bin(data_int))
 
         for i in range(0, len(beyond_opcodes)):
             instructionOperands     = []
@@ -606,15 +595,9 @@ def disassemble(data, addr):
             opcodes                 = beyond_opcodes[i][OPCODE_DEF_INDEX_OPERAND_MASKS:]
 
             # Test if instruction len matches
-            #print(len(instruction_definition))
-            #print(instruction_definition)
             if len(instruction_definition) != tested_instruction_len * 8:
                 continue
 
-            # Check if the opcode matches
-            #if len(data)*8 != len(instruction_definition):
-            #    continue
-            
             # Check 0s
             if not ((~data_int & opcode_mask_0) == opcode_mask_0):
                 continue
@@ -622,11 +605,8 @@ def disassemble(data, addr):
             if not ((data_int & opcode_mask_1) == opcode_mask_1):
                 continue
 
-            print("Disassemling for instruction: " + operand_name)
-            print(instruction_definition)
-
-            #for opcode in opcodes:
-                #print(opcode)
+            #print("Disassemling for instruction: " + operand_name)
+            #print(instruction_definition)
 
             # Iterate over all opcodes
             for opcode in opcodes:
@@ -637,8 +617,8 @@ def disassemble(data, addr):
 
                     immediate_mask = opcode[1][0]
 
-                    print("Immediate mask")
-                    print(bin(immediate_mask))
+                    #print("Immediate mask")
+                    #print(bin(immediate_mask))
 
                     immediate = extract_immediate(data_int, immediate_mask, InstInfo.LSB in instr_dec_flags, InstInfo.UNSIGNED in instr_dec_flags)
                     non_pc_rel_immediate = immediate
@@ -660,9 +640,9 @@ def disassemble(data, addr):
                 if opcode[0] == OperandType.Register:
                     register_mask = opcode[1][0]     
 
-                    print("Register mask")
-                    print(bin(register_mask))
-                    print(type(register_mask))
+                    #print("Register mask")
+                    #print(bin(register_mask))
+                    #print(type(register_mask))
 
                     register = extract_register(data_int, register_mask)
 
@@ -676,15 +656,15 @@ def disassemble(data, addr):
 
                     instructionOperands.append(MemoryOperand([ImmediateOperand(immediate, 0, False, False), RegisterOperand(register)]))
 
-            print("Parsed instruction operands: ")
-            for op in instructionOperands:
-                print(str(op))
+            #print("Parsed instruction operands: ")
+            #for op in instructionOperands:
+                #print(str(op))
 
             instruction_len = tested_instruction_len
             instruction = Instruction(operand_name, instructionOperands, llil_func, i)
             instruction.size = int(len(instruction_definition) / 8)
 
-            print(str(instruction))
+            #print(str(instruction))
 
             found = True
             break
@@ -752,7 +732,7 @@ def init_disassembler():
         operand_name            = beyond_opcodes[i][OPCODE_DEF_INDEX_OPCODE_NAME]
         operand_definition      = beyond_opcodes[i][OPCODE_DEF_INDEX_OPERANDS]
 
-        print("INSTRUCTION: " + operand_name)
+        #print("INSTRUCTION: " + operand_name)
 
         # 1)
         # Replace the "0x..." opcode definition at the beginning of the strings
@@ -762,7 +742,7 @@ def init_disassembler():
         beyond_opcodes[i][OPCODE_DEF_INDEX_OPERAND_DEFINITIONS] = format_str.format(int(beyond_opcodes[i][OPCODE_DEF_INDEX_OPERAND_DEFINITIONS][:3], 16)) + beyond_opcodes[i][OPCODE_DEF_INDEX_OPERAND_DEFINITIONS][3:]
         instruction_definition                                  = beyond_opcodes[i][OPCODE_DEF_INDEX_OPERAND_DEFINITIONS]
         
-        print(instruction_definition)
+        #print(instruction_definition)
 
         # 2)
         # Append a quick opcode check mask. This mask contains only the bits needed
@@ -771,8 +751,8 @@ def init_disassembler():
         beyond_opcodes[i].append(operand_mask_0)
         beyond_opcodes[i].append(operand_mask_1)
 
-        print("Operand mask 0: " + bin(operand_mask_0))
-        print("Operand mask 1: " + bin(operand_mask_1))
+        #print("Operand mask 0: " + bin(operand_mask_0))
+        #print("Operand mask 1: " + bin(operand_mask_1))
 
         # 3)
         # For every opcode, compute the mask and store it in the opcode
@@ -804,7 +784,7 @@ def lookup_disasm_cache(addr, data):
 
     if addr in disasm_cache:
         if data == disasm_cache[addr][0]:
-            print("lookup_disasm_cache success")
+            #print("lookup_disasm_cache success")
             return disasm_cache[addr][1], disasm_cache[addr][2], disasm_cache[addr][3]
     
     return None, None, None

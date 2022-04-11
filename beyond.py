@@ -48,6 +48,8 @@ class Beyond2(Architecture):
         "r31" : RegisterInfo("r31", address_size),
     }
 
+    flags = ["F", "OV", "C"]
+
     stack_pointer = "r1"
 
     def get_instruction_info(self, data, addr):
@@ -111,8 +113,6 @@ class Beyond2(Architecture):
 
         if expr is not None:
             il.append(expr)
-        else:
-            instruction_len = 0
 
         return instruction_len
 

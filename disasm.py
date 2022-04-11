@@ -1,7 +1,7 @@
 from binaryninja.function import InstructionTextToken
 from binaryninja.enums import InstructionTextTokenType, BranchType
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 import beyond.utils as utils
 import beyond.llil as il
@@ -34,39 +34,39 @@ class InstInfo(Enum):
     RETURN = 6
     UNSIGNED = 7
 
-class Register(Enum):
-    r0  = "r0"
-    r1  = "r1"
-    r2  = "r2"
-    r3  = "r3"
-    r4  = "r4"
-    r5  = "r5"
-    r6  = "r6"
-    r7  = "r7"
-    r8  = "r8"
-    r9  = "r9"
-    r10 = "r10"
-    r11 = "r11"
-    r12 = "r12"
-    r13 = "r13"
-    r14 = "r14"
-    r15 = "r15"
-    r16 = "r16"
-    r17 = "r17"
-    r18 = "r18"
-    r19 = "r19"
-    r20  = "r20"
-    r21  = "r21"
-    r22  = "r22"
-    r23  = "r23"
-    r24  = "r24"
-    r25  = "r25"
-    r26  = "r26"
-    r27  = "r27"
-    r28  = "r28"
-    r29  = "r29"
-    r30  = "r30"
-    r31  = "r31"
+class Register(IntEnum):
+    r0  = 0
+    r1  = 1
+    r2  = 2
+    r3  = 3
+    r4  = 4
+    r5  = 5
+    r6  = 6
+    r7  = 7
+    r8  = 8
+    r9  = 9
+    r10 = 10
+    r11 = 11
+    r12 = 12
+    r13 = 13
+    r14 = 14
+    r15 = 15
+    r16 = 16
+    r17 = 17
+    r18 = 18
+    r19 = 19
+    r20  = 20
+    r21  = 21
+    r22  = 22
+    r23  = 23
+    r24  = 24
+    r25  = 25
+    r26  = 26
+    r27  = 27
+    r28  = 28
+    r29  = 29
+    r30  = 30
+    r31  = 31
 
 class OperandType(Enum):
     Immediate = 0,
@@ -84,11 +84,11 @@ class RegisterOperand(Operand):
         self.register = register
 
     def __str__(self):
-        return "<RegisterOperand register: %s>" % (self.register)
+        return "<RegisterOperand register: %d>" % (self.register)
 
     def visit(self):
         result = []
-        result.append(InstructionTextToken(InstructionTextTokenType.RegisterToken, self.register.value))
+        result.append(InstructionTextToken(InstructionTextTokenType.RegisterToken, "r" + str(int(self.register))))
         return result
 
 class ImmediateOperand(Operand):
@@ -194,7 +194,7 @@ beyond_opcodes = [
     ["bt.addi",	    "rD,G",		    "0x0 00 DD DDD1 GGGG", [InstInfo.NONE], il.lift_bt_addi],
     ["bt.mov",	    "rD,rA",	    "0x0 01 DD DDDA AAAA", [InstInfo.NONE], il.lift_bt_mov],
     ["bt.add",	    "rD,rA",	    "0x0 10 DD DDDA AAAA", [InstInfo.NONE], il.lift_bt_add],
-    ["bt.j",	    "T",		    "0x0 11 TT TTTT TTTT", [InstInfo.LSB, InstInfo.BRANCH], il.unimplemented],
+    ["bt.j",	    "T",		    "0x0 11 TT TTTT TTTT", [InstInfo.LSB, InstInfo.BRANCH], il.lift_bn_j],
     ["bn.sb",	    "N(rA),rB",	    "0x2 00 BB BBBA AAAA NNNN NNNN", [InstInfo.NONE], il.lift_bn_sb],
     ["bn.lbz",	    "rD,N(rA)",	    "0x2 01 DD DDDA AAAA NNNN NNNN", [InstInfo.NONE], il.lift_bn_lbz],
     ["bn.sh",	    "M(rA),rB",	    "0x2 10 BB BBBA AAAA 0MMM MMMM", [InstInfo.NONE], il.lift_bn_sh],
@@ -237,19 +237,19 @@ beyond_opcodes = [
     ["bn.sqr",	    "rD,rA",	    "0x3 11 10 -10A AAAA DDDD D001", [InstInfo.NONE], il.unimplemented],
     ["bn.sqra",	    "rD,rA",	    "0x3 11 10 -10A AAAA DDDD D010", [InstInfo.NONE], il.unimplemented],
     ["bn.casei",	"rA,N",		    "0x3 11 11 -00A AAAA NNNN NNNN", [InstInfo.NONE], il.unimplemented],
-    ["bn.beqi",	    "rB,E,P",	    "0x4 00 00 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bn.bnei",	    "rB,E,P",	    "0x4 00 01 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bn.bgesi",	"rB,E,P",	    "0x4 00 10 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bn.bgtsi",	"rB,E,P",	    "0x4 00 11 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bn.blesi",	"rB,E,P",	    "0x4 01 00 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bn.bltsi",	"rB,E,P",	    "0x4 01 01 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bn.j",	    "Z",		    "0x4 01 10 ZZZZ ZZZZ ZZZZ ZZZZ", [InstInfo.LSB, InstInfo.BRANCH], il.unimplemented],
-    ["bn.bf",	    "S",		    "0x4 01 11 0010 SSSS SSSS SSSS", [InstInfo.NONE], il.unimplemented],
-    ["bn.bnf",	    "S",		    "0x4 01 11 0011 SSSS SSSS SSSS", [InstInfo.NONE], il.unimplemented],
-    ["bn.bo",	    "S",		    "0x4 01 11 0100 SSSS SSSS SSSS", [InstInfo.NONE], il.unimplemented],
-    ["bn.bno",	    "S",		    "0x4 01 11 0101 SSSS SSSS SSSS", [InstInfo.NONE], il.unimplemented],
-    ["bn.bc",	    "S",		    "0x4 01 11 0110 SSSS SSSS SSSS", [InstInfo.NONE], il.unimplemented],
-    ["bn.bnc",	    "S",		    "0x4 01 11 0111 SSSS SSSS SSSS", [InstInfo.NONE], il.unimplemented],
+    ["bn.beqi",	    "rB,E,P",	    "0x4 00 00 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_beqi],
+    ["bn.bnei",	    "rB,E,P",	    "0x4 00 01 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bnei],
+    ["bn.bgesi",	"rB,E,P",	    "0x4 00 10 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgesi],
+    ["bn.bgtsi",	"rB,E,P",	    "0x4 00 11 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgtsi],
+    ["bn.blesi",	"rB,E,P",	    "0x4 01 00 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_blesi],
+    ["bn.bltsi",	"rB,E,P",	    "0x4 01 01 EEEB BBBB PPPP PPPP", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bltsi],
+    ["bn.j",	    "Z",		    "0x4 01 10 ZZZZ ZZZZ ZZZZ ZZZZ", [InstInfo.LSB, InstInfo.BRANCH], il.lift_bn_j],
+    ["bn.bf",	    "S",		    "0x4 01 11 0010 SSSS SSSS SSSS", [InstInfo.NONE], il.lift_bn_bf],
+    ["bn.bnf",	    "S",		    "0x4 01 11 0011 SSSS SSSS SSSS", [InstInfo.NONE], il.lift_bn_bnf],
+    ["bn.bo",	    "S",		    "0x4 01 11 0100 SSSS SSSS SSSS", [InstInfo.NONE], il.lift_bn_bo],
+    ["bn.bno",	    "S",		    "0x4 01 11 0101 SSSS SSSS SSSS", [InstInfo.NONE], il.lift_bn_bno],
+    ["bn.bc",	    "S",		    "0x4 01 11 0110 SSSS SSSS SSSS", [InstInfo.NONE], il.lift_bn_bc],
+    ["bn.bnc",	    "S",		    "0x4 01 11 0111 SSSS SSSS SSSS", [InstInfo.NONE], il.lift_bn_bnc],
     ["bn.entri",	"F,N",		    "0x4 01 11 1010 FFFF NNNN NNNN", [InstInfo.NONE], il.unimplemented],
     ["bn.reti",	    "F,N",		    "0x4 01 11 1011 FFFF NNNN NNNN", [InstInfo.NONE], il.unimplemented],
     ["bn.rtnei",	"F,N",		    "0x4 01 11 1100 FFFF NNNN NNNN", [InstInfo.NONE], il.unimplemented],
@@ -339,26 +339,26 @@ beyond_opcodes = [
     ["bw.sfleui",	"rA,g",		    "0x9 11 11 01-A AAAA gggg gggg gggg gggg gggg gggg gggg gggg", [InstInfo.UNSIGNED], il.lift_bn_sfleui],
     ["bw.sfltsi",	"rA,g",		    "0x9 11 11 10-A AAAA gggg gggg gggg gggg gggg gggg gggg gggg", [InstInfo.NONE], il.lift_bn_sfltsi],
     ["bw.sfltui",	"rA,g",		    "0x9 11 11 11-A AAAA gggg gggg gggg gggg gggg gggg gggg gggg", [InstInfo.UNSIGNED], il.lift_bn_sfltui],
-    ["bw.beqi",	    "rB,I,u",	    "0xa 00 00 00II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bnei",	    "rB,I,u",	    "0xa 00 00 01II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgesi",	"rB,I,u",	    "0xa 00 00 10II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgtsi",	"rB,I,u",	    "0xa 00 00 11II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.blesi",	"rB,I,u",	    "0xa 00 01 00II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bltsi",	"rB,I,u",	    "0xa 00 01 01II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgeui",	"rB,I,u",	    "0xa 00 01 10II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgtui",	"rB,I,u",	    "0xa 00 01 11II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bleui",	"rB,I,u",	    "0xa 00 10 00II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bltui",	"rB,I,u",	    "0xa 00 10 01II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.beq",	    "rA,rB,u",	    "0xa 00 10 10AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bne",	    "rA,rB,u",	    "0xa 00 10 11AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bges",	    "rA,rB,u",	    "0xa 00 11 00AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgts",	    "rA,rB,u",	    "0xa 00 11 01AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgeu",	    "rA,rB,u",	    "0xa 00 11 10AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bw.bgtu",	    "rA,rB,u",	    "0xa 00 11 11AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
+    ["bw.beqi",	    "rB,I,u",	    "0xa 00 00 00II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_beqi],
+    ["bw.bnei",	    "rB,I,u",	    "0xa 00 00 01II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bnei],
+    ["bw.bgesi",	"rB,I,u",	    "0xa 00 00 10II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgesi],
+    ["bw.bgtsi",	"rB,I,u",	    "0xa 00 00 11II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgtsi],
+    ["bw.blesi",	"rB,I,u",	    "0xa 00 01 00II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_blesi],
+    ["bw.bltsi",	"rB,I,u",	    "0xa 00 01 01II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bltsi],
+    ["bw.bgeui",	"rB,I,u",	    "0xa 00 01 10II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgesi],
+    ["bw.bgtui",	"rB,I,u",	    "0xa 00 01 11II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgtsi],
+    ["bw.bleui",	"rB,I,u",	    "0xa 00 10 00II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_blesi],
+    ["bw.bltui",	"rB,I,u",	    "0xa 00 10 01II IIIB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bltsi],
+    ["bw.beq",	    "rA,rB,u",	    "0xa 00 10 10AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_beq],
+    ["bw.bne",	    "rA,rB,u",	    "0xa 00 10 11AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bne],
+    ["bw.bges",	    "rA,rB,u",	    "0xa 00 11 00AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bges],
+    ["bw.bgts",	    "rA,rB,u",	    "0xa 00 11 01AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bgts],
+    ["bw.bgeu",	    "rA,rB,u",	    "0xa 00 11 10AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bges],
+    ["bw.bgtu",	    "rA,rB,u",	    "0xa 00 11 11AA AAAB BBBB uuuu uuuu uuuu uuuu uuuu uuuu uuuu", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bgts],
     ["bw.jal",	    "z",		    "0xa 01 00 00-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.LSB, InstInfo.CALL], il.unimplemented],
-    ["bw.j",	    "z",		    "0xa 01 00 01-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.LSB, InstInfo.BRANCH], il.unimplemented],
-    ["bw.bf",	    "z",		    "0xa 01 00 10-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.NONE], il.unimplemented],
-    ["bw.bnf",	    "z",		    "0xa 01 00 11-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.NONE], il.unimplemented],
+    ["bw.j",	    "z",		    "0xa 01 00 01-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.LSB, InstInfo.BRANCH], il.lift_bn_j],
+    ["bw.bf",	    "z",		    "0xa 01 00 10-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.NONE], il.lift_bn_bf],
+    ["bw.bnf",	    "z",		    "0xa 01 00 11-- ---- zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.NONE], il.lift_bn_bnf],
     ["bw.ja",	    "g",		    "0xa 01 01 00-- ---- gggg gggg gggg gggg gggg gggg gggg gggg", [InstInfo.NONE], il.unimplemented],
     ["bw.jma",	    "rD,z",		    "0xa 01 01 01DD DDD0 zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.NONE], il.unimplemented],
     ["bw.jmal",	    "rD,z",		    "0xa 01 01 01DD DDD1 zzzz zzzz zzzz zzzz zzzz zzzz zzzz zzzz", [InstInfo.NONE], il.unimplemented],
@@ -415,26 +415,26 @@ beyond_opcodes = [
     ["bg.lws",	    "rD,W(rA)",	    "0xc 11 DD DDDA AAAA 10WW WWWW WWWW WWWW", [InstInfo.NONE], il.lift_bn_lws],
     ["bg.sd",	    "V(rA),rB",	    "0xc 11 BB BBBA AAAA 110V VVVV VVVV VVVV", [InstInfo.NONE], il.lift_bn_sd],
     ["bg.ld",	    "rD,V(rA)",	    "0xc 11 DD DDDA AAAA 111V VVVV VVVV VVVV", [InstInfo.NONE], il.lift_bn_ld],
-    ["bg.beqi",	    "rB,I,U",	    "0xd 00 00 00II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bnei",	    "rB,I,U",	    "0xd 00 00 01II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgesi",	"rB,I,U",	    "0xd 00 00 10II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgtsi",	"rB,I,U",	    "0xd 00 00 11II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.blesi",	"rB,I,U",	    "0xd 00 01 00II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bltsi",	"rB,I,U",	    "0xd 00 01 01II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgeui",	"rB,I,U",	    "0xd 00 01 10II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgtui",	"rB,I,U",	    "0xd 00 01 11II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bleui",	"rB,I,U",	    "0xd 00 10 00II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bltui",	"rB,I,U",	    "0xd 00 10 01II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.beq",	    "rA,rB,U",	    "0xd 00 10 10AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bne",	    "rA,rB,U",	    "0xd 00 10 11AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bges",	    "rA,rB,U",	    "0xd 00 11 00AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgts",	    "rA,rB,U",	    "0xd 00 11 01AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgeu",	    "rA,rB,U",	    "0xd 00 11 10AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
-    ["bg.bgtu",	    "rA,rB,U",	    "0xd 00 11 11AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.unimplemented],
+    ["bg.beqi",	    "rB,I,U",	    "0xd 00 00 00II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_beqi],
+    ["bg.bnei",	    "rB,I,U",	    "0xd 00 00 01II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bnei],
+    ["bg.bgesi",	"rB,I,U",	    "0xd 00 00 10II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgesi],
+    ["bg.bgtsi",	"rB,I,U",	    "0xd 00 00 11II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgtsi],
+    ["bg.blesi",	"rB,I,U",	    "0xd 00 01 00II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_blesi],
+    ["bg.bltsi",	"rB,I,U",	    "0xd 00 01 01II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bltsi],
+    ["bg.bgeui",	"rB,I,U",	    "0xd 00 01 10II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgesi],
+    ["bg.bgtui",	"rB,I,U",	    "0xd 00 01 11II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bgtsi],
+    ["bg.bleui",	"rB,I,U",	    "0xd 00 10 00II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_blesi],
+    ["bg.bltui",	"rB,I,U",	    "0xd 00 10 01II IIIB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bn_bltsi],
+    ["bg.beq",	    "rA,rB,U",	    "0xd 00 10 10AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_beq],
+    ["bg.bne",	    "rA,rB,U",	    "0xd 00 10 11AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bne],
+    ["bg.bges",	    "rA,rB,U",	    "0xd 00 11 00AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bges],
+    ["bg.bgts",	    "rA,rB,U",	    "0xd 00 11 01AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bgts],
+    ["bg.bgeu",	    "rA,rB,U",	    "0xd 00 11 10AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bges],
+    ["bg.bgtu",	    "rA,rB,U",	    "0xd 00 11 11AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.LSB, InstInfo.CONDITIONAL_BRANCH], il.lift_bw_bgts],
     ["bg.jal",	    "t",		    "0xd 01 00 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB, InstInfo.CALL], il.unimplemented],
-    ["bg.j",	    "t",		    "0xd 01 01 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB, InstInfo.BRANCH], il.unimplemented],
-    ["bg.bf",	    "t",		    "0xd 01 10 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB], il.unimplemented],
-    ["bg.bnf",	    "t",		    "0xd 01 11 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB], il.unimplemented],
+    ["bg.j",	    "t",		    "0xd 01 01 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB, InstInfo.BRANCH], il.lift_bn_j],
+    ["bg.bf",	    "t",		    "0xd 01 10 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB], il.lift_bn_bf],
+    ["bg.bnf",	    "t",		    "0xd 01 11 tttt tttt tttt tttt tttt tttt", [InstInfo.LSB], il.lift_bn_bnf],
     ["bg.addi",	    "rD,rA,Y",	    "0xd 10 DD DDDA AAAA YYYY YYYY YYYY YYYY", [InstInfo.NONE], il.lift_bn_addi],
     ["fg.beq.s",	"rA,rB,U",	    "0xd 11 00 00AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.NONE], il.unimplemented],
     ["fg.bne.s",	"rA,rB,U",	    "0xd 11 00 01AA AAAB BBBB UUUU UUUU UUUU", [InstInfo.NONE], il.unimplemented],
@@ -467,7 +467,7 @@ def extract_immediate(instruction, mask, lsb_first, unsigned):
 def extract_register(instruction, mask):
     register_number = extract_immediate(instruction, mask, False, True)
 
-    return Register("r" + str(register_number))
+    return Register(register_number)
 
 # Takes an operand definition and returns a bitmask for the immediate. 
 # Exmple:
